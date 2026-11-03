@@ -2,8 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Battery Status PILOT Extension</title>
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; color: #334155; background: #f8fafc; margin: 0; padding: 32px 16px; }
+        main { max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; }
+        h1 { font-size: 22px; margin: 0 0 12px; color: #0f172a; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+        a { color: #2563eb; }
+    </style>
 </head>
 <body>
+<main>
+    <h1>Battery Status &mdash; PILOT Extension</h1>
+    <p>This is the hosting folder of the <code>battery_status</code> PILOT Extension.
+       It shows the live battery status of BLE tags on PILOT objects.</p>
+    <p><strong>Entry file:</strong> <a href="Module.js">Module.js</a> (defines <code>Store.battery_status.Module</code>)</p>
+    <p><strong>Register in PILOT Admin:</strong> Name <code>battery_status</code>, URL = this folder's address.</p>
+    <p><strong>Documentation:</strong> <a href="doc/">doc/</a></p>
+</main>
 </body>
 </html>
