@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Status - PILOT Extension</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background: #f5f5f5; color: #222; }
+        .container { max-width: 860px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+        h1 { color: #2c3e50; border-bottom: 2px solid #2f6db5; padding-bottom: 10px; }
+        h2 { color: #2c3e50; margin-top: 28px; }
+        .box { background: #eef4fb; padding: 12px 16px; margin: 14px 0; border-left: 4px solid #2f6db5; }
+        code { background: #f1f1f1; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        pre { background: #f6f6f6; padding: 12px; border-radius: 4px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+        th { background: #f2f4f7; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Battery Status</h1>
+    <p>Shows the battery status of every BLE temperature/humidity tag on your warehouse objects, in one place, with nested tabs per warehouse.</p>
+
+    <div class="box">
+        <strong>Why it reads Sensors Tracing:</strong> the battery status of a tag arrives as text
+        (<code>BatteryVoltageStatus&lt;tag id&gt;=Normal</code>). Selector sensors fed by a text field
+        show no value in the normal sensor list, so the extension reads the raw packet data
+        (<code>triggerdata</code>) that you also see in <em>Sensors Tracing</em>.
+    </div>
+
+    <h2>Where to find it</h2>
+    <ul>
+        <li>Left menu: <strong>Battery Status</strong> tab, with two inner tabs:
+            <ul>
+                <li><strong>Warehouses</strong>: region &rarr; object tree with a Normal/total badge. Click an object to open it; click a region to filter the overview.</li>
+                <li><strong>Settings</strong>: auto refresh and how many hours of Sensors Tracing to read (1 to 24).</li>
+            </ul>
+        </li>
+        <li>Main area, three tabs:
+            <ul>
+                <li><strong>Overview</strong>: summary tiles and every tag grouped by object, with search.</li>
+                <li><strong>Alerts</strong>: tags that are not Normal (low battery text, not reporting, unknown text).</li>
+                <li><strong>Warehouses</strong>: one vertical tab per object with its tags, the gateway battery and power voltage.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>Columns</h2>
+    <table>
+        <tr><th>Column</th><th>Source</th></tr>
+        <tr><td>Battery</td><td><code>BatteryVoltageStatus&lt;dec&gt;</code> text, e.g. Normal</td></tr>
+        <tr><td>Sensor location</td><td>Name of the <code>BTS-&lt;hex&gt;-&lt;name&gt;</code> sensor, or of the <code>Temperature&lt;dec&gt;</code> sensor when no BTS sensor exists</td></tr>
+        <tr><td>Sensor ID (hex)</td><td>Tag ID converted from decimal to hexadecimal (2183475351 &rarr; 82253097)</td></tr>
+        <tr><td>Level</td><td><code>BatteryVoltage&lt;dec&gt;</code> raw level reported by the tag</td></tr>
+        <tr><td>Temp. / Humidity / RSSI</td><td><code>Temperature&lt;dec&gt;</code>, <code>Humidity&lt;dec&gt;</code>, <code>RSSI&lt;dec&gt;</code></td></tr>
+        <tr><td>Last packet</td><td>Time of the newest packet that contained this tag</td></tr>
+    </table>
+
+    <h2>Status rules</h2>
+    <ul>
+        <li><strong>Normal</strong>: text contains normal / ok / good / full.</li>
+        <li><strong>Alert</strong>: text contains low, not normal, abnormal, critical, replace, fault and similar words.</li>
+        <li><strong>Not reporting</strong>: the tag has a battery sensor but sent no battery value in the selected window.</li>
+        <li><strong>Unknown</strong>: any other text, or only a level without text.</li>
+    </ul>
+
+    <h2>Data sources (read-only)</h2>
+    <pre>GET ax/tree.php?vehs=1&amp;state=1                    object tree
+GET ax/sensors/sensors.php?agent_id=&lt;id&gt;          sensor configuration (cached 30 min)
+GET ax/sensors_trace.php?cmd=get&amp;agent_id=&lt;id&gt;
+    &amp;ts=&lt;Y-m-dTH:i:s&gt;&amp;te=&lt;Y-m-dTH:i:s&gt;&amp;page=1&amp;start=0&amp;limit=2000</pre>
+    <p>These are legacy PILOT backend endpoints observed in the running web application; they are not part of the documented <code>/api/v3</code> API. Sensors Tracing accepts one object and at most one day per request, so the extension asks for each tagged object separately, three at a time. Objects without tag fields are skipped after the configuration call. Auto refresh pauses while the browser tab is hidden.</p>
+
+    <h2>Technical details</h2>
+    <p><strong>Extension name:</strong> <code>battery_status</code><br>
+       <strong>Main class:</strong> <code>Store.battery_status.Module</code> (extends <code>Ext.Component</code>, entry <code>initModule()</code>)<br>
+       <strong>Styles:</strong> <code>/store/battery_status/style.css</code>, all classes prefixed <code>bs-</code></p>
+    <pre>battery_status/
+├── index.html     root file
+├── Module.js      extension code (all classes in one file)
+├── style.css      styles
+└── doc/
+    └── index.html this page</pre>
+</div>
+</body>
+</html>
