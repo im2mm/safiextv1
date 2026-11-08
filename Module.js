@@ -42,7 +42,7 @@
 
 (function () {
     var EXT = 'battery_status';
-    var VERSION = '1.3.1'; // bump on every release; shown in the console, Settings tab and doc/
+    var VERSION = '1.3.2'; // bump on every release; shown in the console, Settings tab and doc/
 
     var TZ = 'Asia/Riyadh';          // account local time used by the platform
     var TZ_OFFSET_S = 3 * 3600;      // Riyadh has no DST; used for Excel date cells
@@ -291,7 +291,7 @@
                 if (opts.silent) { throw new Error('Not signed in'); }
                 return me.login().then(function () { return me.raw(path, opts); }).then(function (r2) { return me.parse(r2); });
             }, function () {
-                throw new Error(t('Cannot reach the report server') + ' (' + me.base + ')');
+                throw new Error(t('Cannot reach the report server') + ' (' + me.base + '). ' + t('If this keeps happening, the backend update (CORS for PILOT) is not deployed yet.'));
             });
         },
 
@@ -1928,8 +1928,31 @@
                 this.down('#ignition').setValue(false);
                 this.down('#ignition').setDisabled(true);
             }
-            if (!list.length) { this.down('#vehGrid').getView().emptyText = '<div class="bs-empty">' + enc(t('No vehicles.')) + '</div>'; }
+            this.setEmptyText(list.length ? '' : '<div class="bs-empty">' + enc(t('No vehicles.')) + '</div>');
             this.applyFilter();
+        },
+
+        setEmptyText: function (html) {
+            var view = this.down('#vehGrid').getView();
+            view.emptyText = html;
+            if (view.rendered) { view.refresh(); }
+        },
+
+        /** Loading failed: say so in the list (instead of "Loading vehicles…") with a retry link. */
+        showError: function (msg) {
+            var me = this;
+            me.setEmptyText('<div class="bs-error" style="margin:8px">' + enc(msg) + '<br><a href="#" class="bs-retry">' + enc(t('Try again')) + '</a></div>');
+            var el = me.down('#vehGrid').getView().getEl();
+            if (el && !me.retryBound) {
+                me.retryBound = true;
+                el.on('click', function (e) {
+                    if (e.getTarget('.bs-retry')) {
+                        e.preventDefault();
+                        me.setEmptyText('<div class="bs-empty">' + enc(t('Loading vehicles…')) + '</div>');
+                        me.main.ensureLoaded();
+                    }
+                });
+            }
         },
 
         applyFilter: function () {
@@ -2058,6 +2081,7 @@
             }).catch(function (e) {
                 me.loaded = false;
                 me.loadErr = errorText(e);
+                me.nav.showError(me.loadErr);
                 me.render();
             });
         },
@@ -2930,7 +2954,7 @@
             var me = this, shown = me.shown(), html = [], failed = 0, info = me.nav && me.nav.down('#info');
             Ext.Object.each(me.results, function (k, r) { if (r.error) { failed += 1; } });
             if (me.nav) {
-                info.setHtml(enc(me.loading ? t('Signing in to gps.im2m.ws and loading vehicles…') : shown.length + ' / ' + me.vehicles.length + ' ' + t('vehicles')));
+                info.setHtml(me.loadErr && !me.loading ? '<div class="bs-error">' + enc(me.loadErr) + '</div>' : enc(me.loading ? t('Signing in to gps.im2m.ws and loading vehicles…') : shown.length + ' / ' + me.vehicles.length + ' ' + t('vehicles')));
                 me.nav.down('#fetch').setText(t('Fetch latest packets') + ' (' + shown.length + ')');
                 me.nav.down('#fetch').setDisabled(me.loading || me.running || !shown.length);
                 me.nav.down('#fetch').setHidden(!!me.running);
