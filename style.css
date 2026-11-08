@@ -82,3 +82,18 @@
 .bs-empty { padding: 20px; color: #777; text-align: center; }
 .bs-settings p { margin: 8px 0; line-height: 1.4; }
 .bs-object-tabs .x-tab { text-align: left; }
+
+/* v1.2.0: Warehouse Sensor Status layout (same look as the web report) */
+.bs-tile-on { box-shadow: 0 0 0 2px #2f6db5 inset; }
+.bs-progress { height: 6px; border-radius: 3px; background: #e3e6ea; overflow: hidden; }
+.bs-progress > div { height: 100%; background: #2f6db5; transition: width .2s; }
+.bs-grid .bs-row-low .x-grid-cell { background: #fdf3f2; }
+.bs-grid .bs-row-nodata .x-grid-cell { background: #f6f7f9; }
+.bs-grid .x-grid-row { cursor: pointer; }
+.bs-grid code, .x-window code { font-family: Consolas, monospace; font-size: 12px; }
+.bs-table { border-collapse: collapse; width: 100%; font-size: 12px; background: #fff; }
+.bs-table th, .bs-table td { border-bottom: 1px solid #e3e6ea; padding: 4px 8px; text-align: left; vertical-align: top; }
+.bs-table th { background: #f2f4f7; position: sticky; top: 0; }
+.bs-table .bs-num { text-align: right; }
+.bs-table tr.bs-row-low td { background: #fdf3f2; }
+.bs-table tr.bs-row-nodata td { background: #f6f7f9; }

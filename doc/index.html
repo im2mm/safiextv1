@@ -19,63 +19,75 @@
 </head>
 <body>
 <div class="container">
-    <h1>Battery Status <small style="font-size:14px;color:#777;font-weight:normal">v1.1.0</small></h1>
-    <p>Shows the battery status of every BLE temperature/humidity tag on your warehouse objects, in one place, with nested tabs per warehouse.</p>
+    <h1>Battery Status <small style="font-size:14px;color:#777;font-weight:normal">v1.2.0</small></h1>
+    <p>Warehouse Sensor Status inside PILOT: the latest battery voltage of every wireless temperature/humidity sensor on your objects, with the same rules as the Al Safi web report.</p>
 
     <div class="box">
-        <strong>Why it reads Sensors Tracing:</strong> the battery status of a tag arrives as text
-        (<code>BatteryVoltageStatus&lt;tag id&gt;=Normal</code>). Selector sensors fed by a text field
-        show no value in the normal sensor list, so the extension reads the raw packet data
-        (<code>triggerdata</code>) that you also see in <em>Sensors Tracing</em>.
+        <strong>Where the values come from:</strong> the wireless sensors report inside the raw packet data
+        (<code>triggerdata</code>) that you also see in <em>Sensors Tracing</em>:
+        <code>BatteryVoltage&lt;id&gt;=3.630, BatteryVoltageStatus&lt;id&gt;=Normal, Temperature&lt;id&gt;=5.1, Humidity&lt;id&gt;=60, RSSI&lt;id&gt;=121</code>.
+        <code>&lt;id&gt;</code> is the sensor ID in decimal; the ID printed on the sensor is the same number in hex (2183475330 &rarr; 82253082).
     </div>
+
+    <h2>Status rules</h2>
+    <ul>
+        <li><strong>Normal</strong>: latest battery voltage is 3.3 V or more.</li>
+        <li><strong>Low</strong>: latest battery voltage is below 3.3 V.</li>
+        <li><strong>No reading</strong>: no voltage, or the latest voltage is older than 3 hours. It is not counted as Low; the last known voltage is shown greyed out.</li>
+        <li>The platform's own text (<code>BatteryVoltageStatus</code>) is shown under the status when it differs, e.g. "Battery Status: Normal".</li>
+    </ul>
+
+    <h2>Which sensors are listed</h2>
+    <ul>
+        <li>A sensor is listed when the object's sensor list has a <code>Temperature&lt;id&gt;</code> or <code>Humidity&lt;id&gt;</code> sensor for it. IDs the gateway happens to hear but that are not registered are ignored.</li>
+        <li>The name comes from the Temperature sensor (else Humidity); a <code>BTS-&lt;hex&gt;-</code> prefix is removed ("BTS-82253082-TEMP7" &rarr; "TEMP7").</li>
+        <li>Calculated "average" sensors and status/selector sensors are ignored everywhere.</li>
+    </ul>
 
     <h2>Where to find it</h2>
     <ul>
         <li>Left menu: <strong>Battery Status</strong> tab, with two inner tabs:
             <ul>
-                <li><strong>Warehouses</strong>: region &rarr; object tree with a Normal/total badge. Click an object to open it; click a region to filter the overview.</li>
-                <li><strong>Settings</strong>: auto refresh and how many hours of Sensors Tracing to read (1 to 24).</li>
+                <li><strong>Warehouses</strong>: site &rarr; object tree with a Normal/total badge. Click an object to open it; click a site to filter the overview.</li>
+                <li><strong>Settings</strong>: Duration (Now = last 24 hours, or the last 6, 12, 48, 72 hours) and auto refresh (off by default).</li>
             </ul>
         </li>
         <li>Main area, three tabs:
             <ul>
-                <li><strong>Overview</strong>: summary tiles and every tag grouped by object, with search.</li>
-                <li><strong>Alerts</strong>: tags that are not Normal (low battery text, not reporting, unknown text).</li>
-                <li><strong>Warehouses</strong>: one vertical tab per object with its tags, the gateway battery and power voltage.</li>
+                <li><strong>Overview</strong>: tiles Low / No reading / Normal / Sensors-objects (click a tile to filter), every sensor grouped by object (objects with most Low first), filter box, status filter, <em>Fetch battery status</em>, <em>Stop</em>, <em>Download Excel</em>.</li>
+                <li><strong>Alerts</strong>: sensors that are Low or No reading.</li>
+                <li><strong>Warehouses</strong>: one vertical tab per object with gateway battery, power supply, last packet and an <em>All sensors</em> button.</li>
             </ul>
         </li>
+        <li><strong>Click any sensor row</strong> for its readings in the last 24 hours: count, voltage min/max, readings below 3.3 V, a trend line and the full list.</li>
     </ul>
 
     <h2>Columns</h2>
     <table>
         <tr><th>Column</th><th>Source</th></tr>
-        <tr><td>Battery</td><td><code>BatteryVoltageStatus&lt;dec&gt;</code> text, e.g. Normal</td></tr>
-        <tr><td>Sensor location</td><td>Name of the <code>BTS-&lt;hex&gt;-&lt;name&gt;</code> sensor, or of the <code>Temperature&lt;dec&gt;</code> sensor when no BTS sensor exists</td></tr>
-        <tr><td>Sensor ID (hex)</td><td>Tag ID converted from decimal to hexadecimal (2183475351 &rarr; 82253097)</td></tr>
-        <tr><td>Level</td><td><code>BatteryVoltage&lt;dec&gt;</code> raw level reported by the tag</td></tr>
-        <tr><td>Temp. / Humidity / RSSI</td><td><code>Temperature&lt;dec&gt;</code>, <code>Humidity&lt;dec&gt;</code>, <code>RSSI&lt;dec&gt;</code></td></tr>
-        <tr><td>Last packet</td><td>Time of the newest packet that contained this tag</td></tr>
+        <tr><td>Sensor</td><td>Sensor name (see above)</td></tr>
+        <tr><td>Sensor ID</td><td>Hex ID; hover for the decimal ID</td></tr>
+        <tr><td>Voltage</td><td><code>BatteryVoltage&lt;id&gt;</code> of the newest packet that contained it</td></tr>
+        <tr><td>Status</td><td>Normal / Low / No reading (rules above)</td></tr>
+        <tr><td>Temp °C / Hum %</td><td><code>Temperature&lt;id&gt;</code>, <code>Humidity&lt;id&gt;</code></td></tr>
+        <tr><td>Last reading</td><td>Time of the newest packet with a voltage for this sensor (Asia/Riyadh)</td></tr>
     </table>
 
-    <h2>Status rules</h2>
-    <ul>
-        <li><strong>Normal</strong>: text contains normal / ok / good / full.</li>
-        <li><strong>Alert</strong>: text contains low, not normal, abnormal, critical, replace, fault and similar words.</li>
-        <li><strong>Not reporting</strong>: the tag has a battery sensor but sent no battery value in the selected window.</li>
-        <li><strong>Unknown</strong>: any other text, or only a level without text.</li>
-    </ul>
+    <h2>Excel export</h2>
+    <p>Three sheets: <strong>Battery voltage</strong> (one row per sensor, Low rows red, No reading rows grey), <strong>Gateways</strong> (one row per object: IMEI, gateway battery, power supply, last packet, counts, error) and <strong>All sensors</strong> (every configured sensor with its latest value). The file is saved as <code>.xls</code>; Excel may ask to confirm the format when opening it.</p>
 
     <h2>Data sources (read-only)</h2>
-    <pre>GET ax/tree.php?vehs=1&amp;state=1                    object tree
-GET ax/sensors/sensors.php?agent_id=&lt;id&gt;          sensor configuration (cached 30 min)
-GET ax/sensors_trace.php?cmd=get&amp;agent_id=&lt;id&gt;
-    &amp;ts=&lt;Y-m-dTH:i:s&gt;&amp;te=&lt;Y-m-dTH:i:s&gt;&amp;page=1&amp;start=0&amp;limit=2000</pre>
-    <p>These are legacy PILOT backend endpoints observed in the running web application; they are not part of the documented <code>/api/v3</code> API. Sensors Tracing accepts one object and at most one day per request, so the extension asks for each tagged object separately, three at a time. Objects without tag fields are skipped after the configuration call. Auto refresh pauses while the browser tab is hidden.</p>
+    <pre>GET  ax/tree.php?vehs=1&amp;checked=1&amp;node=src           object tree
+POST ax/sensors/sensors.php  agent_id=&lt;id&gt;             sensor list (cached 30 min)
+GET  ax/sensors_trace.php?cmd=get&amp;agent_id=&lt;id&gt;
+     &amp;ts=&lt;dd.mm.yyyy HH:MM&gt;&amp;te=&lt;dd.mm.yyyy HH:MM&gt;
+     &amp;page=..&amp;start=..&amp;limit=100&amp;sort=[ts_date DESC]   raw packets</pre>
+    <p>These are legacy PILOT backend endpoints observed in the running web application; they are not part of the documented <code>/api/v3</code> API. Pages of 100 packets are read newest first until every sensor has a voltage (at most 2000 packets per object; one page for objects without wireless sensors). Three objects are read at a time. The sensor history reads up to 4000 packets of the last 24 hours.</p>
 
     <h2>Technical details</h2>
     <p><strong>Extension name:</strong> <code>battery_status</code><br>
        <strong>Main class:</strong> <code>Store.battery_status.Module</code> (extends <code>Ext.Component</code>, entry <code>initModule()</code>)<br>
-       <strong>Version:</strong> <code>1.1.0</code> (2026-11-08)<br>
+       <strong>Version:</strong> <code>1.2.0</code> (2026-11-08)<br>
        <strong>Styles:</strong> <code>/store/battery_status/style.css</code>, all classes prefixed <code>bs-</code></p>
     <pre>battery_status/
 ├── index.html     root file
