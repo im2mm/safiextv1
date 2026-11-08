@@ -29,6 +29,7 @@
 
 (function () {
     var EXT = 'battery_status';
+    var VERSION = '1.1.0'; // bump on every release; shown in the console, Settings tab and doc/
 
     function t(text) {
         return (typeof window.l === 'function') ? window.l(text) : text;
@@ -941,7 +942,8 @@
                     cls: 'bs-muted',
                     html: '<p>' + enc(t('The battery status is read from the raw packet data (triggerdata) of Sensors Tracing, field BatteryVoltageStatus<tag id>. A tag that sent no battery value in this window is shown as Not reporting.')) + '</p>' +
                         '<p>' + enc(t('Names come from the BTS-<hex>-<name> sensors, or from the Temperature<tag id> sensor when no BTS sensor exists.')) + '</p>' +
-                        '<p>' + enc(t('Settings are saved in this browser only.')) + '</p>'
+                        '<p>' + enc(t('Settings are saved in this browser only.')) + '</p>' +
+                        '<p>' + enc(t('Version')) + ' ' + enc(VERSION) + '</p>'
                 }
             ];
 
@@ -960,7 +962,7 @@
             var me = this;
 
             if (window.console) {
-                console.log('battery_status: initModule()');
+                console.log('battery_status: initModule() v' + VERSION);
             }
 
             if (!window.skeleton || !skeleton.navigation || !skeleton.navigation.add) {
