@@ -42,7 +42,7 @@
 
 (function () {
     var EXT = 'battery_status';
-    var VERSION = '1.3.3'; // bump on every release; shown in the console, Settings tab and doc/
+    var VERSION = '1.3.4'; // bump on every release; shown in the console, Settings tab and doc/
 
     var TZ = 'Asia/Riyadh';          // account local time used by the platform
     var TZ_OFFSET_S = 3 * 3600;      // Riyadh has no DST; used for Excel date cells
@@ -2054,7 +2054,7 @@
                             if (tr) {
                                 var k = tr.getAttribute('data-key');
                                 if (me.open[k]) { delete me.open[k]; } else { me.open[k] = true; }
-                                me.render();
+                                me.renderView();
                             }
                         }
                     }
@@ -2062,10 +2062,10 @@
             });
             me.items = [me.body0];
             me.tbar = [
-                { xtype: 'textfield', emptyText: t('Search plate in results…'), width: 210, listeners: { change: function (f, v) { me.resultSearch = String(v || '').toLowerCase(); me.render(); }, buffer: 200 } },
-                { xtype: 'checkbox', boxLabel: t('Hide vehicles without trips'), checked: true, margin: '0 0 0 8', listeners: { change: function (f, v) { me.hideEmpty = v; me.render(); } } },
+                { xtype: 'textfield', emptyText: t('Search plate in results…'), width: 210, listeners: { change: function (f, v) { me.resultSearch = String(v || '').toLowerCase(); me.renderView(); }, buffer: 200 } },
+                { xtype: 'checkbox', boxLabel: t('Hide vehicles without trips'), checked: true, margin: '0 0 0 8', listeners: { change: function (f, v) { me.hideEmpty = v; me.renderView(); } } },
                 { xtype: 'checkbox', itemId: 'hideNoSensor', boxLabel: t('Hide vehicles without temperature sensor'), checked: true, hidden: true, margin: '0 0 0 8',
-                    listeners: { change: function (f, v) { me.hideNoSensor = v; me.render(); } } },
+                    listeners: { change: function (f, v) { me.hideNoSensor = v; me.renderView(); } } },
                 '->',
                 { text: t('Download Excel'), iconCls: 'fa fa-file-excel', itemId: 'excel', disabled: true, handler: function () { me.exportExcel(); } },
                 { text: t('Print / PDF'), iconCls: 'fa fa-print', handler: function () { window.print(); } }
@@ -2079,7 +2079,7 @@
             me.loaded = true;
             me.notice = null;
             me.loadErr = '';
-            me.render();
+            me.renderView();
             Api.call('/api/config').then(function (c) {
                 me.settings = c.config.settings;
                 me.nav.setDefaults(me.tz());
@@ -2091,12 +2091,12 @@
                 }, function () { me.zoneCount = null; });
             }).then(function () {
                 me.nav.down('#zoneWarn').setHidden(me.zoneCount !== 0);
-                me.render();
+                me.renderView();
             }).catch(function (e) {
                 me.loaded = false;
                 me.loadErr = errorText(e);
                 me.nav.showError(me.loadErr);
-                me.render();
+                me.renderView();
             });
         },
 
@@ -2105,11 +2105,11 @@
         run: function () {
             var me = this, nav = me.nav, p = nav.params(), list = nav.selected(), out, next = 0, done = 0, errs = [];
             if (!me.settings) { me.ensureLoaded(); return; }
-            if (!p.from || !p.to || p.from >= p.to) { me.notice = { kind: 'err', text: t('Invalid time range: "From" must be before "To".') }; me.render(); return; }
-            if (!list.length) { me.notice = { kind: 'warn', text: t('Select at least one vehicle.') }; me.render(); return; }
+            if (!p.from || !p.to || p.from >= p.to) { me.notice = { kind: 'err', text: t('Invalid time range: "From" must be before "To".') }; me.renderView(); return; }
+            if (!list.length) { me.notice = { kind: 'warn', text: t('Select at least one vehicle.') }; me.renderView(); return; }
             if (me.zoneCount === 0) {
                 me.notice = { kind: 'err', text: t('No geozones defined yet. Add the ASD sites in the Geozones tab (import a KML/GeoJSON file or draw them), then generate the report.') };
-                me.render();
+                me.renderView();
                 return;
             }
             me.notice = null;
@@ -2120,7 +2120,7 @@
             me.open = {};
             me.progress = { done: 0, total: list.length };
             nav.setRunning(true);
-            me.render();
+            me.renderView();
             out = new Array(list.length);
 
             function worker() {
@@ -2132,7 +2132,7 @@
                         done += 1;
                         me.progress = { done: done, total: list.length };
                         me.results = Ext.Array.filter(out, Boolean);
-                        me.render();
+                        me.renderView();
                         return worker();
                     });
             }
@@ -2155,7 +2155,7 @@
                         (ns ? ', ' + ns + ' ' + t('without temperature sensor (excluded from averages)') : '') + (errs.length ? ', ' + errs.length + ' ' + t('failed') : '') + '. ' +
                         t('Use “Download Excel” to save it.'), excel: true };
                 }
-                me.render();
+                me.renderView();
             });
         },
 
@@ -2205,7 +2205,7 @@
         },
         COLS: ['Plate Number', 'Date', 'Geozone Exit', 'Geozone Entry', 'Duration', 'Running', 'Idle', 'Stopped', 'Inactive', 'Geozone', 'Avg °C', 'Min °C', 'Max °C', 'Readings'],
 
-        render: function () {
+        renderView: function () {
             var me = this, html = [], visible = me.visible(), totals = me.totals(visible), tz = me.tz(),
                 noSensor = Ext.Array.filter(me.results, function (r) { return r.noSensor; }),
                 empty = Ext.Array.filter(me.results, function (r) { return !r.days.length; }),
@@ -2807,7 +2807,7 @@
             var me = this;
             me.items = [
                 { xtype: 'textfield', anchor: '100%', emptyText: t('Search plate / name / IMEI / branch / status…'),
-                    listeners: { change: function (f, v) { me.main.search = String(v || '').trim().toLowerCase(); me.main.render(); }, buffer: 200 } },
+                    listeners: { change: function (f, v) { me.main.search = String(v || '').trim().toLowerCase(); me.main.renderView(); }, buffer: 200 } },
                 { xtype: 'component', itemId: 'info', cls: 'bs-muted', margin: '4 0 8 0', html: '' },
                 { xtype: 'button', anchor: '100%', itemId: 'fetch', text: t('Fetch latest packets'), iconCls: 'fa fa-download', handler: function () { me.main.run(); } },
                 { xtype: 'button', anchor: '100%', itemId: 'stop', text: t('Stop'), hidden: true, margin: '6 0 0 0', handler: function () { me.main.cancel = true; } },
@@ -2848,13 +2848,13 @@
             me.loaded = true;
             me.loading = true;
             me.loadErr = '';
-            me.render();
+            me.renderView();
             Api.call('/api/gps/vehicles').then(function (r) {
                 me.vehicles = r.vehicles || [];
             }, function (e) {
                 me.loaded = false;
                 me.loadErr = errorText(e);
-            }).then(function () { me.loading = false; me.render(); });
+            }).then(function () { me.loading = false; me.renderView(); });
         },
 
         shown: function () {
@@ -2870,20 +2870,20 @@
             me.cancel = false;
             me.running = true;
             me.progress = { done: 0, total: list.length };
-            me.render();
+            me.renderView();
             function worker() {
                 if (i >= list.length || me.cancel) { return Promise.resolve(); }
                 var v = list[i++];
                 return Api.call('/api/gps/packet', { json: { imei: v.imei } }).then(function (p) { me.results[v.imei] = { packet: p }; },
                     function (e) { me.results[v.imei] = { error: errorText(e) }; }).then(function () {
                     me.progress.done += 1;
-                    me.render();
+                    me.renderView();
                     return worker();
                 });
             }
             var workers = [];
             for (var k = 0; k < 6; k += 1) { workers.push(worker()); }
-            Promise.all(workers).then(function () { me.running = false; me.render(); });
+            Promise.all(workers).then(function () { me.running = false; me.renderView(); });
         },
 
         onClick: function (e) {
@@ -2899,7 +2899,7 @@
                     me.loadList();
                     return;
                 }
-                me.render();
+                me.renderView();
                 return;
             }
             row = e.getTarget('tr[data-raw]');
@@ -2907,7 +2907,7 @@
                 imei = row.getAttribute('data-imei');
                 var idx = Number(row.getAttribute('data-raw'));
                 me.logs[imei].raw = me.logs[imei].raw === idx ? null : idx;
-                me.render();
+                me.renderView();
                 return;
             }
             row = e.getTarget('tr[data-imei]');
@@ -2915,7 +2915,7 @@
                 imei = row.getAttribute('data-imei');
                 if (me.results[imei] && me.results[imei].packet) {
                     me.open[imei] = !me.open[imei];
-                    me.render();
+                    me.renderView();
                 }
             }
         },
@@ -2923,7 +2923,7 @@
         loadLog: function (imei) {
             var me = this, st = me.logs[imei] = { open: true, loading: true, raw: null };
             Api.call('/api/gps/log', { json: { imei: imei } }).then(function (r) { st.rows = r.rows || []; }, function (e) { st.error = errorText(e); })
-                .then(function () { st.loading = false; me.render(); });
+                .then(function () { st.loading = false; me.renderView(); });
         },
 
         bleCell: function (ble, pending) {
@@ -2964,7 +2964,7 @@
             return html.join('');
         },
 
-        render: function () {
+        renderView: function () {
             var me = this, shown = me.shown(), html = [], failed = 0, info = me.nav && me.nav.down('#info');
             Ext.Object.each(me.results, function (k, r) { if (r.error) { failed += 1; } });
             if (me.nav) {
