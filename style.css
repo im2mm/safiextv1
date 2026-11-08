@@ -124,3 +124,6 @@
 @media print {
     .bs-report .x-toolbar { display: none !important; }
 }
+
+/* v1.3.3: the object list shows the name and the badge only (status icons rendered as dots in PILOT's tree) */
+.bs-tree .x-tree-icon { display: none; }

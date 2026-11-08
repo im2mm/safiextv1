@@ -42,7 +42,7 @@
 
 (function () {
     var EXT = 'battery_status';
-    var VERSION = '1.3.2'; // bump on every release; shown in the console, Settings tab and doc/
+    var VERSION = '1.3.3'; // bump on every release; shown in the console, Settings tab and doc/
 
     var TZ = 'Asia/Riyadh';          // account local time used by the platform
     var TZ_OFFSET_S = 3 * 3600;      // Riyadh has no DST; used for Excel date cells
@@ -53,7 +53,7 @@
     var WINDOWS = [['now', 'Now'], [6, 'Last 6 hours'], [12, 'Last 12 hours'], [48, 'Last 48 hours'], [72, 'Last 72 hours']];
 
     function t(text) {
-        return (typeof window.l === 'function') ? window.l(text) : text;
+        return text; // PILOT's l() translated some labels into Russian; the reports are English like the site
     }
 
     function enc(value) {
@@ -574,7 +574,9 @@
                     results[obj.agentId] = error ? { obj: obj, error: error } : { obj: obj, data: data };
                     running -= 1;
                     done += 1;
+                    me.progress = { done: done, total: total };
                     me.fireEvent('progress', me, done, total);
+                    if (done < total && !me.cancelled) { me.finish(results, true); } // show each object as soon as it is read
                     Ext.defer(next, 150); // be gentle with the tracking server
                 });
             }
@@ -777,7 +779,7 @@
             });
         },
 
-        finish: function (results) {
+        finish: function (results, partial) {
             var me = this, rows = [], errors = 0;
 
             me.results = results;
@@ -820,9 +822,12 @@
             });
 
             me.store.loadData(rows);
-            me.loading = false;
-            me.lastLoad = new Date();
-            me.fireEvent('load', me, rows, errors);
+            if (!partial) {
+                me.loading = false;
+                me.progress = null;
+                me.lastLoad = new Date();
+            }
+            me.fireEvent('load', me, rows, errors, !!partial);
         },
 
         /** Objects that have at least one listed probe (others are hidden from the tree and tabs). */
@@ -1479,12 +1484,9 @@
             me.service.on({
                 beforeload: function () {
                     me.setBusy(true);
-                    me.summaryCmp.setHtml('<div class="bs-muted">' + enc(t('Loading objects…')) + '</div>');
+                    me.renderSummary();
                 },
-                progress: function (data, done, total) {
-                    me.summaryCmp.setHtml('<div class="bs-progress"><div style="width:' + Math.round(100 * done / total) + '%"></div></div>' +
-                        '<div class="bs-muted bs-note">' + done + ' / ' + total + ' ' + enc(t('objects processed')) + '</div>');
-                },
+                progress: function () { me.renderSummary(); },
                 load: me.onDataLoad,
                 loaderror: function (data, msg) {
                     me.setBusy(false);
@@ -1577,17 +1579,17 @@
             }
         },
 
-        onDataLoad: function (data, rows, errors) {
+        onDataLoad: function (data, rows, errors, partial) {
             var lastLoad = this.down('#lastLoad'),
                 alertsTab = this.child('#alerts'),
                 s = data.getSummary(),
                 alerts = s.low + s.nodata;
 
-            this.setBusy(false);
+            this.setBusy(!!partial);
             this.applyFilters();
             this.renderSummary();
 
-            if (lastLoad) {
+            if (lastLoad && !partial) {
                 lastLoad.setText(t('fetched') + ' ' + Ext.Date.format(new Date(), 'H:i') + ' · ' +
                     (data.win === 'now' ? t('Now') : t('last') + ' ' + data.win + ' h'));
             }
@@ -1599,13 +1601,17 @@
         },
 
         renderSummary: function () {
-            var me = this, data = me.service, s, failed;
-            if (!data.lastLoad) {
+            var me = this, data = me.service, s, failed, prog = data.progress,
+                progHtml = data.loading ? '<div class="bs-progress"><div style="width:' + (prog ? Math.round(100 * prog.done / prog.total) : 0) + '%"></div></div>' +
+                    '<div class="bs-muted bs-note">' + (prog ? prog.done + ' / ' + prog.total + ' ' + enc(t('objects read')) + ' — ' : '') + enc(t('Loading battery status… results appear as each object is read.')) + '</div>' : '';
+            me.setEmptyTexts(data.loading);
+            if (!data.lastLoad && !data.store.getCount()) {
+                me.summaryCmp.setHtml(progHtml || '<div class="bs-muted">' + enc(t('Loading objects…')) + '</div>');
                 return;
             }
             s = data.getSummary();
             failed = data.getFailed();
-            me.summaryCmp.setHtml(
+            me.summaryCmp.setHtml(progHtml +
                 '<div class="bs-tiles">' +
                 me.tile(t('Low battery') + ' (&lt; ' + LOW_VOLTAGE + ' V)', s.low, 'low') +
                 me.tile(t('No reading') + ' (&gt; ' + STALE_HOURS + ' h)', s.nodata, 'nodata') +
@@ -1621,6 +1627,14 @@
                     Ext.Array.map(failed.slice(0, 5), function (f) { return enc(f.obj.name + ': ' + f.error); }).join('<br>') +
                     (failed.length > 5 ? '<br>…' : '') + '</div>' : '')
             );
+        },
+
+        /** While loading, the empty grids say so instead of "Nothing matches". */
+        setEmptyTexts: function (loading) {
+            Ext.Array.each([[this.overviewGrid, t('Nothing matches the current filter.')], [this.alertsGrid, t('Every sensor is Normal.')]], function (x) {
+                var view = x[0].getView(), txt = '<div class="bs-empty">' + enc(loading ? t('Loading… results appear as each object is read.') : x[1]) + '</div>';
+                if (view.emptyText !== txt) { view.emptyText = txt; if (view.rendered && !x[0].getStore().getCount()) { view.refresh(); } }
+            });
         },
 
         // Label is pre-escaped by the caller (it contains &lt; / &gt;).
