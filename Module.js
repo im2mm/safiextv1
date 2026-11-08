@@ -578,11 +578,10 @@
     Ext.define('Store.battery_status.view.MainPanel', {
         extend: 'Ext.tab.Panel',
         cls: 'bs-main',
-        layout: 'fit',
 
         initComponent: function () {
             var me = this,
-                source = me.data.store;
+                source = me.service.store;
 
             me.overviewStore = Ext.create('Ext.data.ChainedStore', {
                 source: source,
@@ -664,7 +663,7 @@
 
             me.callParent(arguments);
 
-            me.data.on({
+            me.service.on({
                 beforeload: function () { me.setLoading(t('Loading battery status...')); },
                 progress: function (data, done, total) {
                     me.setLoading(t('Reading sensor tracing') + ' ' + done + ' / ' + total);
@@ -737,7 +736,7 @@
         // One nested tab per object (warehouse), with its own filtered grid.
         syncObjectTabs: function () {
             var me = this,
-                data = me.data,
+                data = me.service,
                 activeId = me.objectTabs.getActiveTab() ? me.objectTabs.getActiveTab().agentId : null;
 
             me.tabsById = me.tabsById || {};
@@ -845,7 +844,7 @@
             };
 
             me.callParent(arguments);
-            me.data.on('load', me.rebuild, me);
+            me.service.on('load', me.rebuild, me);
         },
 
         rebuild: function (data) {
@@ -960,16 +959,31 @@
         initModule: function () {
             var me = this;
 
+            if (window.console) {
+                console.log('battery_status: initModule()');
+            }
+
             if (!window.skeleton || !skeleton.navigation || !skeleton.navigation.add) {
-                Ext.log('battery_status: skeleton.navigation not found');
+                if (window.console) { console.warn('battery_status: skeleton.navigation not found'); }
                 return;
             }
 
             var frame = skeleton.mapframe || skeleton.map_frame;
             if (!frame || !frame.add) {
-                Ext.log('battery_status: skeleton.mapframe not found');
+                if (window.console) { console.warn('battery_status: skeleton.mapframe not found'); }
                 return;
             }
+
+            try {
+                me.buildUi(frame);
+            } catch (e) {
+                // Surface the real cause instead of failing silently inside PILOT's loader.
+                if (window.console) { console.error('battery_status: failed to build the UI', e); }
+            }
+        },
+
+        buildUi: function (frame) {
+            var me = this;
 
             me.loadStyles();
 
@@ -978,26 +992,30 @@
                 hoursBack: storageGet('hoursBack', 3)
             };
 
-            me.data = Ext.create('Store.battery_status.Data', {});
+            me.service = Ext.create('Store.battery_status.Data', {});
 
             me.mainPanel = Ext.create('Store.battery_status.view.MainPanel', {
-                data: me.data,
+                service: me.service,
                 module: me
             });
 
             var LeftTabClass = Ext.ClassManager.get('Pilot.utils.LeftBarPanel') ? 'Pilot.utils.LeftBarPanel' : 'Ext.tab.Panel';
 
+            // cls replaces LeftBarPanel's own classes, so keep the native ones
+            // (same as the working temp_humidity_report tab) or the rail tab is not styled/shown.
             me.navTab = Ext.create(LeftTabClass, {
                 title: t('Battery Status'),
+                tooltip: t('Battery Status'),
                 iconCls: 'fa fa-battery-three-quarters',
                 iconAlign: 'top',
                 minimized: true,
-                cls: 'bs-nav',
+                cls: 'tab_clipped leftbarpanel bs-nav',
+                bodyCls: 'left_top_round',
                 items: [
                     Ext.create('Store.battery_status.view.ObjectTree', {
                         title: t('Warehouses'),
                         iconCls: 'fa fa-warehouse',
-                        data: me.data,
+                        service: me.service,
                         mainPanel: me.mainPanel,
                         module: me
                     }),
@@ -1024,13 +1042,13 @@
         },
 
         ensureLoaded: function () {
-            if (!this.data.lastLoad && !this.data.loading) {
+            if (!this.service.lastLoad && !this.service.loading) {
                 this.reload();
             }
         },
 
         reload: function () {
-            this.data.load(this.settings.hoursBack);
+            this.service.load(this.settings.hoursBack);
         },
 
         applySettings: function (changes) {
@@ -1039,7 +1057,7 @@
             if (Ext.isDefined(changes.refreshSec)) {
                 this.startTimer();
             }
-            if (Ext.isDefined(changes.hoursBack) && this.data.lastLoad) {
+            if (Ext.isDefined(changes.hoursBack) && this.service.lastLoad) {
                 this.reload();
             }
         },
@@ -1053,7 +1071,7 @@
             if (me.settings.refreshSec > 0) {
                 me.timer = setInterval(function () {
                     // Skip background polling while the browser tab is hidden.
-                    if (!document.hidden && me.data.lastLoad) {
+                    if (!document.hidden && me.service.lastLoad) {
                         me.reload();
                     }
                 }, me.settings.refreshSec * 1000);
