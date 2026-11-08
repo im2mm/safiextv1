@@ -42,7 +42,7 @@
 
 (function () {
     var EXT = 'battery_status';
-    var VERSION = '1.3.4'; // bump on every release; shown in the console, Settings tab and doc/
+    var VERSION = '1.3.5'; // bump on every release; shown in the console, Settings tab and doc/
 
     var TZ = 'Asia/Riyadh';          // account local time used by the platform
     var TZ_OFFSET_S = 3 * 3600;      // Riyadh has no DST; used for Excel date cells
@@ -2719,7 +2719,12 @@
                 cutPolygon: false, rotateMode: false, drawRectangle: true, drawPolygon: true, drawCircle: true,
                 editMode: true, dragMode: true, removalMode: true
             });
-            m.pm.setGlobalOptions({ snappable: true, pathOptions: { color: '#0b7a75' } });
+            // PILOT ships an older leaflet.pm (setPathOptions); newer Geoman has setGlobalOptions.
+            if (typeof m.pm.setGlobalOptions === 'function') {
+                m.pm.setGlobalOptions({ snappable: true, pathOptions: { color: '#0b7a75' } });
+            } else if (typeof m.pm.setPathOptions === 'function') {
+                m.pm.setPathOptions({ color: '#0b7a75' });
+            }
             m.on('pm:create', function (e) {
                 var g = me.geom(e.layer), st = me.gstate, z;
                 m.removeLayer(e.layer);
