@@ -42,7 +42,7 @@
 
 (function () {
     var EXT = 'battery_status';
-    var VERSION = '1.3.0'; // bump on every release; shown in the console, Settings tab and doc/
+    var VERSION = '1.3.1'; // bump on every release; shown in the console, Settings tab and doc/
 
     var TZ = 'Asia/Riyadh';          // account local time used by the platform
     var TZ_OFFSET_S = 3 * 3600;      // Riyadh has no DST; used for Excel date cells
@@ -2663,6 +2663,11 @@
 
         initMap: function () {
             var me = this, L = window.L, el = me.body.dom.querySelector('.bs-mapdiv'), m, streets, sat;
+            if (me.map) {
+                // Map already built (e.g. loading the zones is being retried): just refresh its size.
+                me.map.invalidateSize();
+                return;
+            }
             m = L.map(el, { center: [24.7136, 46.6753], zoom: 6 });
             streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
             sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri World Imagery' });
