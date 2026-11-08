@@ -97,3 +97,30 @@
 .bs-table .bs-num { text-align: right; }
 .bs-table tr.bs-row-low td { background: #fdf3f2; }
 .bs-table tr.bs-row-nodata td { background: #f6f7f9; }
+
+/* v1.3.0: Temperature Report, Geozones, Vehicles Battery, Export options */
+.bs-report .bs-table { font-size: 12px; }
+.bs-h { margin: 0 0 4px; font-size: 18px; color: #0f172a; }
+.bs-notice { margin-top: 8px; padding: 6px 10px; border-radius: 4px; border: 1px solid transparent; }
+.bs-notice-ok   { color: #1e7b34; background: #e5f5e9; border-color: #b9e2c3; }
+.bs-notice-warn { color: #8a5a00; background: #fff4dc; border-color: #f0d49b; }
+.bs-notice-err  { color: #b3261e; background: #fdeceb; border-color: #f3b8b4; }
+.bs-notice button, .bs-error button, .bs-report .bs-table button, .bs-logbar button {
+    margin-left: 6px; padding: 1px 8px; font-size: 12px; cursor: pointer;
+    border: 1px solid #c9ced6; border-radius: 4px; background: #fff;
+}
+.bs-table tr.bs-veh td { background: #eef3f6; font-weight: bold; }
+.bs-table tr.bs-long td { background: #fff4e5; }
+.bs-table tr.bs-sub td { background: #fafbfc; }
+.bs-table tfoot td { background: #e2f3f2; font-weight: bold; }
+.bs-readings { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 4px 0; }
+.bs-reading { font-size: 12px; color: #444; white-space: nowrap; }
+.bs-link { color: #2f6db5; font-weight: bold; }
+.bs-pre { white-space: pre-wrap; word-break: break-all; margin: 6px 0 0; font-size: 11px; background: #f6f7f9; padding: 6px; border-radius: 4px; }
+.bs-logbar { margin-bottom: 6px; }
+.bs-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+.bs-off .x-form-cb-label { color: #999; }
+.bs-geomap .leaflet-container { font: inherit; }
+@media print {
+    .bs-report .x-toolbar { display: none !important; }
+}
